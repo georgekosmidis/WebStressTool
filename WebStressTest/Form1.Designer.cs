@@ -161,7 +161,7 @@
             this.Controls.Add(this.txtURL);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "Form1";
-            this.Text = "Web Stress Tester";
+            this.Text = "Web Stress Tester (v1)";
             ((System.ComponentModel.ISupportInitialize)(this.numConThreads)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numTries)).EndInit();
             this.ResumeLayout(false);

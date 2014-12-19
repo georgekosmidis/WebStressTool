@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Deamons.UI;
 using System.Threading;
 using System.Net;
 using System.IO;
@@ -40,7 +39,7 @@ namespace WebStressTest {
             GI = 0;
             CI = 0;
             OnWorkComplete_i = 0;
-            Logging.WriteStatus( "Starting Threads" );
+            Logging.WriteStatus( "Initializing Threads" );
 
             for ( int i = 0; i < numConThreads.Value; i++ ) {
                 var thread = new Thread(
@@ -53,11 +52,11 @@ namespace WebStressTest {
                             for ( int j=0; j < numTries.Value; j++ ) {
                                 double dTM = 0;
                                 try {
-                                   dTM = CallResource();
+                                    dTM = CallResource();
                                 }
-                                catch {
+                                catch ( Exception ex ) {
                                     Invoke( (MethodInvoker)delegate {
-                                        Logging.WriteStatus( "*********Call " + j + " from thread " + t + " threw an exception!!!!!!!!!!" );
+                                        Logging.WriteStatus( "*********Call " + (j + 1) + " from thread " + t + " said: " + ex.Message );
                                     } );
                                     continue;
                                 }
@@ -80,24 +79,23 @@ namespace WebStressTest {
                         }
                 );
                 thread.IsBackground = true;
-                thread.Name = string.Format( "{0}", i );
-
+                thread.Name = string.Format( "{0}", (i + 1) );
 
                 _threads.Add( thread );
-                
             }
-
-            foreach ( var t in _threads ) 
+            Logging.WriteStatus( "Executing Threads" );
+            foreach ( var t in _threads )
                 t.Start();
-            
+
         }
+
         int OnWorkComplete_i = 0;
         void OnWorkComplete() {
 
             OnWorkComplete_i++;
             if ( numConThreads.Value <= OnWorkComplete_i ) {
                 Invoke( (MethodInvoker)delegate {
-                    Logging.WriteStatus( "Avg Time: " + (GI / (double)(numConThreads.Value * numTries.Value)) );
+                    Logging.WriteStatus( "Avg Time: " + (GI / CI) );
                     btnStop.Text = "Stop";
                 } );
             }
