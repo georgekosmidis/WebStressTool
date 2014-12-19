@@ -42,7 +42,7 @@
             this.txtURL.Name = "txtURL";
             this.txtURL.Size = new System.Drawing.Size(266, 20);
             this.txtURL.TabIndex = 0;
-            this.txtURL.Text = "http://www.e-forologia.gr/cms/default.aspx";
+            this.txtURL.Text = "http://www.google.com";
             // 
             // button1
             // 
@@ -66,6 +66,16 @@
             // numConThreads
             // 
             this.numConThreads.Location = new System.Drawing.Point(388, 38);
+            this.numConThreads.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numConThreads.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numConThreads.Name = "numConThreads";
             this.numConThreads.Size = new System.Drawing.Size(52, 20);
             this.numConThreads.TabIndex = 3;
@@ -87,6 +97,16 @@
             // numTries
             // 
             this.numTries.Location = new System.Drawing.Point(275, 37);
+            this.numTries.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numTries.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numTries.Name = "numTries";
             this.numTries.Size = new System.Drawing.Size(52, 20);
             this.numTries.TabIndex = 5;
@@ -121,9 +141,9 @@
             this.lblStatus.AutoSize = true;
             this.lblStatus.Location = new System.Drawing.Point(12, 361);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(77, 13);
+            this.lblStatus.Size = new System.Drawing.Size(65, 13);
             this.lblStatus.TabIndex = 8;
-            this.lblStatus.Text = "Κλήση 0 από 0";
+            this.lblStatus.Text = "Call 0 from 0";
             // 
             // Form1
             // 

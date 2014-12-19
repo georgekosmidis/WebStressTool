@@ -28,9 +28,18 @@ namespace WebStressTest {
         }
 
         private void button1_Click( object sender, EventArgs e ) {
+            if ( txtURL.Text.Substring( 0, "http://".Length ) != "http://" ) {
+                MessageBox.Show( "URL must start with http://", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+                return;
+            }
+
             txtLog.Text = "";
             StopThreads = false;
             btnStop.Text = "Stop";
+            _threads.Clear();
+            GI = 0;
+            CI = 0;
+            OnWorkComplete_i = 0;
             Logging.WriteStatus( "Starting Threads" );
 
             for ( int i = 0; i < numConThreads.Value; i++ ) {
@@ -42,9 +51,9 @@ namespace WebStressTest {
                             }
                             var t =  Thread.CurrentThread.Name;
                             for ( int j=0; j < numTries.Value; j++ ) {
-                                var dtStart = DateTime.Now;
+                                double dTM = 0;
                                 try {
-                                    CallResource();
+                                   dTM = CallResource();
                                 }
                                 catch {
                                     Invoke( (MethodInvoker)delegate {
@@ -52,12 +61,12 @@ namespace WebStressTest {
                                     } );
                                     continue;
                                 }
-                                GI += (DateTime.Now - dtStart).TotalMilliseconds;
+                                GI += dTM;
                                 CI++;
 
                                 Invoke( (MethodInvoker)delegate {
-                                    Logging.WriteStatus( "Call " + j + " from thread " + t + " duration " + (DateTime.Now - dtStart).TotalMilliseconds );
-                                    lblStatus.Text = "Κλήση " + CI + " από " + (numConThreads.Value * numTries.Value);
+                                    Logging.WriteStatus( "Call " + j + " from thread " + t + " duration " + dTM );
+                                    lblStatus.Text = "Call " + CI + " from " + (numConThreads.Value * numTries.Value);
                                 } );
 
                                 if ( StopThreads ) {
@@ -75,9 +84,12 @@ namespace WebStressTest {
 
 
                 _threads.Add( thread );
-                thread.Start();
+                
             }
 
+            foreach ( var t in _threads ) 
+                t.Start();
+            
         }
         int OnWorkComplete_i = 0;
         void OnWorkComplete() {
@@ -93,7 +105,9 @@ namespace WebStressTest {
 
         }
 
-        void CallResource() {
+        private double CallResource() {
+            var dt = DateTime.Now;
+
             var request = (HttpWebRequest)WebRequest.Create( txtURL.Text );
             request.Method = WebRequestMethods.Http.Get;
             request.ContentType = "text/html";
@@ -103,6 +117,7 @@ namespace WebStressTest {
                 using ( var dataStream = response.GetResponseStream() ) {
                     using ( StreamReader reader = new StreamReader( dataStream ) ) {
                         var s = reader.ReadToEnd().ToString();
+                        return (DateTime.Now - dt).TotalMilliseconds;
                     }
                 }
             }
@@ -111,6 +126,9 @@ namespace WebStressTest {
         private void btnStop_Click( object sender, EventArgs e ) {
             StopThreads = true;
             btnStop.Text = "Stoping...";
+            foreach ( var t in _threads ) {
+                t.Abort();
+            }
             //Invoke( (MethodInvoker)delegate {
             //    Logging.WriteStatus( "Avg Time: " + (GI / (double)(numConThreads.Value + numConThreads.Value)) );
             //} );
