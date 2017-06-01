@@ -14,6 +14,7 @@ using System.Diagnostics;
 using WebStressTest.Helpers;
 using System.Reflection;
 using WebStressTest.Attributes;
+using WebStressTest.Models;
 
 namespace WebStressTest
 {
@@ -88,10 +89,16 @@ namespace WebStressTest
                     if ((int)val > 0)
                         sb.Append(argument + " " + val.ToString() + " ");
                 }
-                else if (property.PropertyType == typeof(Dictionary<string, string>))
-                    sb.Append("");
                 else if (property.PropertyType == typeof(List<string>))
-                    sb.Append("");
+                {
+                    foreach (var l in val as List<string>)
+                    {
+                        sb.Append(argument + " " + l + " ");
+                    }
+
+                }
+                else if (property.PropertyType == typeof(Verbosity))
+                    sb.Append(argument + " " + (int)val + " ");
                 else
                     sb.Append(argument + " " + val.ToString() + " ");
 

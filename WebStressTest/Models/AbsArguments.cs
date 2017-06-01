@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WebStressTest.Attributes;
+using WebStressTest.Converters;
 
 namespace WebStressTest.Models
 {
@@ -28,31 +29,36 @@ namespace WebStressTest.Models
         [DisplayName("Concurrency")]
         [Description("Number of multiple requests to perform at a time. Default is one request at a time.")]
         [Argument("-c")]
+        [DefaultValue(10)]
         public int Concurrency { get; set; } = 10;
 
         [Category("Benchmarking")]
         [DisplayName("Requests")]
         [Description("Number of requests to perform for the benchmarking session. The default is to just perform a single request which usually leads to non-representative benchmarking results.")]
         [Argument("-n")]
+        [DefaultValue(10)]
         public int Requests { get; set; } = 10;
 
         [Category("Benchmarking")]
         [DisplayName("Timeout")]
-        [Description("Maximum number of seconds to wait before the socket times out. Default is 30 seconds.")]
+        [Description("Maximum number of seconds to wait before the socket times out.")]
         [Argument("-s")]
+        [DefaultValue(30)]
         public int TimeOut { get; set; } = 30;
 
         [Category("Benchmarking")]
         [DisplayName("Time Limit")]
         [Description("Maximum number of seconds to spend for benchmarking. This implies a -n 50000 internally. Use this to benchmark the server within a fixed total amount of time. Per default there is no timelimit.")]
         [Argument("-t")]
-        public int TimeLimit { get; set; }
+        [DefaultValue(0)]
+        public int TimeLimit { get; set; } = 0;
 
         [Category("Reporting")]
         [DisplayName("Verbosity")]
         [Description("Set verbosity level - 4 and above prints information on headers, 3 and above prints response codes (404, 200, etc.), 2 and above prints warnings and info.")]
         [Argument("-v")]
-        public int Verbocity { get; set; }
+        [DefaultValue(Verbosity.Default)]
+        public Verbosity Verbosity { get; set; }
 
         [Category("Request")]
         [DisplayName("Window Size")]
@@ -64,23 +70,26 @@ namespace WebStressTest.Models
         [DisplayName("Address")]
         [Description("Address to bind to when making outgoing connections.")]
         [Argument("-B")]
+        [DefaultValue("https://www.google.com/")]
         public string LocalAddress { get; set; } = "https://www.google.com/";
 
         [Category("Request")]
         [DisplayName("Cookies")]
         [Description("Add a Cookie: line to the request. The argument is typically in the form of a name=value pair.")]
         [Argument("-C")]
-        public Dictionary<string, string> Cookies { get; set; }
+        [Editor("System.Windows.Forms.Design.StringCollectionEditor, System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(System.Drawing.Design.UITypeEditor))]
+        [TypeConverter(typeof(CsvConverter))]
+        public List<string> Cookies { get; set; } = new List<String>();
 
         [Category("Request")]
         [DisplayName("Protocol")]
         [Description("Specify SSL/TLS protocol ")]
         [Argument("-f")]
-        public List<string> Protocol { get; set; } = new List<string>() { { "SSL2" }, { "SSL3" }, { "TLS1" }, { "TLS1.1" }, { "TLS1.2" }, { "ALL" }, { "TLS1.1" }, { "TLS1.2" } };
-
+        [DefaultValue(Protocol.ALL)]
+        public Protocol Protocol { get; set; }
 
         [Category("Request")]
-        [DisplayName("Custom Headerer")]
+        [DisplayName("Custom Header")]
         [Description("Append extra headers to the request. The argument is typically in the form of a valid header line, containing a colon-separated field-value pair (i.e., \"Accept-Encoding: zip/zop;8bit\").")]
         [Argument("-H")]
         public string CustomHeader { get; set; }
@@ -89,24 +98,28 @@ namespace WebStressTest.Models
         [DisplayName("Keep Alive")]
         [Description("Enable the HTTP KeepAlive feature, i.e., perform multiple requests within one HTTP session.")]
         [Argument("-k")]
-        public bool KeepAlive { get; set; } = false;
+        [DefaultValue(false)]
+        public bool KeepAlive { get; set; }
 
         [Category("Request")]
         [DisplayName("Http Method")]
         [Description("Custom HTTP method for the requests. ")]
         [Argument("-m")]
-        public string HttpMethod { get; set; } = "GET";
+        [DefaultValue(RequestMethod.GET)]
+        public RequestMethod HttpMethod { get; set; } = RequestMethod.GET;
 
         [Category("Request")]
         [DisplayName("No Exit On Socket Errors")]
         [Description("Don't exit on socket receive errors.")]
         [Argument("-r")]
+        [DefaultValue(false)]
         public bool NoExitOnSocketErrors { get; set; } = false;
 
         [Category("Request")]
         [DisplayName("Content Type")]
         [Description("Content-type header to use for POST/PUT data, eg. application/x-www-form-urlencoded.")]
         [Argument("-T")]
+        [DefaultValue("text/plain")]
         public string ContentType { get; set; } = "text/plain";
 
         [Category("Request")]

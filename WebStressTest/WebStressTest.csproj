@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ArgumentAttribute.cs" />
+    <Compile Include="Converters\CsvConverter.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -57,6 +58,9 @@
     <Compile Include="Helpers\x64x86.cs" />
     <Compile Include="logging.cs" />
     <Compile Include="Models\AbsArguments.cs" />
+    <Compile Include="Models\eProtocols.cs" />
+    <Compile Include="Models\eVerbosities.cs" />
+    <Compile Include="Models\eRequestMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
