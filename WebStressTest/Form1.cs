@@ -22,6 +22,7 @@ namespace WebStressTest
     {
 
         private List<Thread> _threads;
+        Process process = new Process();
 
         public Form1()
         {
@@ -36,23 +37,103 @@ namespace WebStressTest
             absProperties.SelectedObject = new Models.AbsArguments();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
-            //Uri uriResult;
-            //if (!Uri.TryCreate(txtURL.Text, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
-            //    MessageBox.Show("URL is not valid!");
+            if (!Validations(absProperties.SelectedObject as Models.AbsArguments))
+                return;
 
-            Process p = new Process();
+            txtLog.Clear();
 
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.FileName = x64x86.IsWow64() ? "x64" + Path.DirectorySeparatorChar + "abs.exe" : "x86" + Path.DirectorySeparatorChar + "abs.exe";
-            p.StartInfo.Arguments = GetArguments(absProperties.SelectedObject as Models.AbsArguments);
-            p.Start();
-            txtLog.Text = p.StandardOutput.ReadToEnd().Replace("\n", Environment.NewLine);
-            p.WaitForExit();
+            await Task.Factory.StartNew(() =>
+             {
+                 ProcessStartInfo processToRunInfo = new ProcessStartInfo();
+                 processToRunInfo.UseShellExecute = false;
+                 processToRunInfo.CreateNoWindow = true;
+                 processToRunInfo.RedirectStandardOutput = true;
+                 processToRunInfo.RedirectStandardError = true;
+                 processToRunInfo.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                 processToRunInfo.FileName = x64x86.IsWow64() ? "x64" + Path.DirectorySeparatorChar + "abs.exe" : "x86" + Path.DirectorySeparatorChar + "abs.exe";
+                 processToRunInfo.Arguments = GetArguments(absProperties.SelectedObject as Models.AbsArguments);
+                 //processToRunInfo.WindowStyle = ProcessWindowStyle.Normal;
+                 process = new Process();
+                 process.StartInfo = processToRunInfo;
+                 process.Start();
+                 process.BeginOutputReadLine();
+                 process.BeginErrorReadLine();
+                 process.OutputDataReceived += delegate (object processSender, DataReceivedEventArgs processArgs)
+                 {
+                     txtLog.Invoke((MethodInvoker)delegate
+                     {
+                         if (processArgs.Data != null)
+                             txtLog.AppendText(processArgs.Data.Replace("\n", Environment.NewLine) + Environment.NewLine);
+                     });
+                 };
+                 process.ErrorDataReceived += delegate (object processSender, DataReceivedEventArgs processArgs)
+                 {
+                     txtLog.Invoke((MethodInvoker)delegate
+                     {
+                         if (processArgs.Data != null)
+                             txtLog.AppendText(processArgs.Data.Replace("\n", Environment.NewLine) + Environment.NewLine);
+                     });
+                 };
 
+                 process.WaitForExit();
+
+             });
+        }
+
+        private bool Validations(Models.AbsArguments obj)
+        {
+            Uri uriResult;
+            if (Uri.TryCreate(obj.LocalAddress, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+                obj.LocalAddress = uriResult.ToString();
+            else
+            {
+                txtLog.Clear();
+                txtLog.Text = "Address is not valid!";
+                return false;
+            }
+
+            Type type = obj.GetType();
+            PropertyInfo[] properties = type.GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                var argument = "";
+
+                var val = property.GetValue(obj, null);
+                if (val == null)
+                    continue;
+                foreach (object attr in property.GetCustomAttributes(true))
+                    if (attr as ArgumentAttribute != null)
+                    {
+                        argument = (attr as ArgumentAttribute).Argument;
+                        break;
+                    }
+                if (argument == "")
+                    continue;
+
+                if (property.PropertyType == typeof(int))
+                    if ((int)val < 0)
+                    {
+                        txtLog.Clear();
+                        txtLog.Text = property.Name +" must be greater than 0";
+                        return false;
+                    }
+               
+            }
+
+            return true;
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch { }
         }
 
         private string GetArguments(Models.AbsArguments obj)
@@ -71,9 +152,25 @@ namespace WebStressTest
                     continue;
                 foreach (object attr in property.GetCustomAttributes(true))
                     if (attr as ArgumentAttribute != null)
+                    {
                         argument = (attr as ArgumentAttribute).Argument;
+                        break;
+                    }
                 if (argument == "")
                     continue;
+                if (property.Name == "GnuplotFile")
+                {
+                    if ((bool)val)
+                        sb.Append(argument + " " + GetFilePath("tsv") + " ");
+                    continue;
+                }
+                if (property.Name == "CsvFile")
+                {
+                    if ((bool)val)
+                        sb.Append(argument + " " + GetFilePath("csv") + " ");
+                    continue;
+                }
+
                 if (argument == "-B")
                 {
                     url = val.ToString();
@@ -90,23 +187,31 @@ namespace WebStressTest
                         sb.Append(argument + " " + val.ToString() + " ");
                 }
                 else if (property.PropertyType == typeof(List<string>))
-                {
                     foreach (var l in val as List<string>)
-                    {
                         sb.Append(argument + " " + l + " ");
-                    }
-
-                }
                 else if (property.PropertyType == typeof(Verbosity))
                     sb.Append(argument + " " + (int)val + " ");
+                else if (property.PropertyType == typeof(Protocol))
+                    sb.Append(argument + " " + val.ToString().Replace("_", ".") + " ");
                 else
                     sb.Append(argument + " " + val.ToString() + " ");
-
-
             }
+
             sb.Append(url);
+
             return sb.ToString();
         }
+
+        private string GetFilePath(string extension)
+        {
+            var filename = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "_" + (absProperties.SelectedObject as Models.AbsArguments).LocalAddress;
+            foreach (var c in Path.GetInvalidFileNameChars())
+                filename = filename.Replace(c, '_');
+            filename = filename.Replace('.', '_').Replace(' ', '_').Replace('-', '_');
+
+            return AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar + filename + "." + extension;
+        }
+
 
     }
 }

@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WebStressTest.Attributes;
 using WebStressTest.Converters;
+using WebStressTest.Editors;
 
 namespace WebStressTest.Models
 {
     public class AbsArguments
     {
         //http://httpd.apache.org/docs/current/programs/ab.html
+        //
 
         [Category("Authentication")]
         [DisplayName("Auth User/Pass")]
@@ -30,6 +33,8 @@ namespace WebStressTest.Models
         [Description("Number of multiple requests to perform at a time. Default is one request at a time.")]
         [Argument("-c")]
         [DefaultValue(10)]
+        //[TypeConverter(typeof(NumericUpDownTypeConverter))]
+        //[Editor(typeof(NumericUpDownTypeEditor), typeof(UITypeEditor)), MinMaxAttribute(0, 32)]
         public int Concurrency { get; set; } = 10;
 
         [Category("Benchmarking")]
@@ -38,6 +43,20 @@ namespace WebStressTest.Models
         [Argument("-n")]
         [DefaultValue(10)]
         public int Requests { get; set; } = 10;
+
+        [Category("Request")]
+        [DisplayName("POST File")]
+        [Description("File containing data to POST. Remember to also set Http Method and Content Type.")]
+        [Argument("-p")]
+        [Editor(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
+        public string PostFile { get; set; }
+
+        [Category("Request")]
+        [DisplayName("PUT File")]
+        [Description("File containing data to PUT. Remember to also set Http Method and Content Type.")]
+        [Argument("-u")]
+        [Editor(typeof(System.Windows.Forms.Design.FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
+        public string PutFile { get; set; }
 
         [Category("Benchmarking")]
         [DisplayName("Timeout")]
@@ -59,6 +78,20 @@ namespace WebStressTest.Models
         [Argument("-v")]
         [DefaultValue(Verbosity.Default)]
         public Verbosity Verbosity { get; set; }
+
+        [Category("Reporting")]
+        [DisplayName("Save a CSV File")]
+        [Description("Write a Comma separated value (CSV) file which contains for each percentage (from 1% to 100%) the time (in milliseconds) it took to serve that percentage of the requests. This is usually more useful than the 'gnuplot' file; as the results are already 'binned'")]
+        [Argument("-e")]
+        [DefaultValue(false)]
+        public bool CsvFile { get; set; }
+
+        [Category("Reporting")]
+        [DisplayName("Save a GnuPlot File")]
+        [Description("Write all measured values out as a 'gnuplot' or TSV (Tab separate values) file. This file can easily be imported into packages like Gnuplot, IDL, Mathematica, Igor or even Excel. The labels are on the first line of the file.")]
+        [Argument("-g")]
+        [DefaultValue(false)]
+        public bool GnuplotFile { get; set; }
 
         [Category("Request")]
         [DisplayName("Window Size")]

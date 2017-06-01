@@ -1,7 +1,8 @@
-WebStressTool
-=============
+Web Stress Tool
+===============
 
-Simple webserver / website stress tool. 
+Simple website stress tool that uses Apache HTTP server benchmarking tool to get results for any request.<br />
+_http://httpd.apache.org/docs/current/programs/ab.html_
 
 ![Results](https://raw.githubusercontent.com/georgekosmidis/WebStressTool/master/README/Capture.PNG)
 
