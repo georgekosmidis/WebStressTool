@@ -10,126 +10,96 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Net;
 using System.IO;
+using System.Diagnostics;
+using WebStressTest.Helpers;
+using System.Reflection;
+using WebStressTest.Attributes;
 
-namespace WebStressTest {
-    public partial class Form1 : Form {
+namespace WebStressTest
+{
+    public partial class Form1 : Form
+    {
 
         private List<Thread> _threads;
-        double GI = 0;
-        double CI = 0;
-        bool StopThreads = false;
 
-        public Form1() {
+        public Form1()
+        {
             InitializeComponent();
             Logging.TextBoxStatus = this.txtLog;
 
             _threads = new List<Thread>();
         }
 
-        private void button1_Click( object sender, EventArgs e ) {
-            if ( txtURL.Text.Substring( 0, "http://".Length ) != "http://" ) {
-                MessageBox.Show( "URL must start with http://", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
-                return;
-            }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            absProperties.SelectedObject = new Models.AbsArguments();
+        }
 
-            txtLog.Text = "";
-            StopThreads = false;
-            btnStop.Text = "Stop";
-            _threads.Clear();
-            GI = 0;
-            CI = 0;
-            OnWorkComplete_i = 0;
-            Logging.WriteStatus( "Initializing Threads" );
+        private void button1_Click(object sender, EventArgs e)
+        {
+            //Uri uriResult;
+            //if (!Uri.TryCreate(txtURL.Text, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            //    MessageBox.Show("URL is not valid!");
 
-            for ( int i = 0; i < numConThreads.Value; i++ ) {
-                var thread = new Thread(
-                        () => {
-                            if ( StopThreads ) {
-                                i = (int)numConThreads.Value;
-                                return;
-                            }
-                            var t =  Thread.CurrentThread.Name;
-                            for ( int j=0; j < numTries.Value; j++ ) {
-                                double dTM = 0;
-                                try {
-                                    dTM = CallResource();
-                                }
-                                catch ( Exception ex ) {
-                                    Invoke( (MethodInvoker)delegate {
-                                        Logging.WriteStatus( "*********Call " + (j + 1) + " from thread " + t + " said: " + ex.Message );
-                                    } );
-                                    continue;
-                                }
-                                GI += dTM;
-                                CI++;
+            Process p = new Process();
 
-                                Invoke( (MethodInvoker)delegate {
-                                    Logging.WriteStatus( "Call " + j + " from thread " + t + " duration " + dTM );
-                                    lblStatus.Text = "Call " + CI + " from " + (numConThreads.Value * numTries.Value);
-                                } );
-
-                                if ( StopThreads ) {
-                                    Invoke( (MethodInvoker)delegate {
-                                        Logging.WriteStatus( "Thread " + t + " stopped " );
-                                    } );
-                                    return;
-                                }
-                            }
-                            OnWorkComplete();
-                        }
-                );
-                thread.IsBackground = true;
-                thread.Name = string.Format( "{0}", (i + 1) );
-
-                _threads.Add( thread );
-            }
-            Logging.WriteStatus( "Executing Threads" );
-            foreach ( var t in _threads )
-                t.Start();
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            p.StartInfo.FileName = x64x86.IsWow64() ? "x64" + Path.DirectorySeparatorChar + "abs.exe" : "x86" + Path.DirectorySeparatorChar + "abs.exe";
+            p.StartInfo.Arguments = GetArguments(absProperties.SelectedObject as Models.AbsArguments);
+            p.Start();
+            txtLog.Text = p.StandardOutput.ReadToEnd().Replace("\n", Environment.NewLine);
+            p.WaitForExit();
 
         }
 
-        int OnWorkComplete_i = 0;
-        void OnWorkComplete() {
+        private string GetArguments(Models.AbsArguments obj)
+        {
+            var sb = new StringBuilder();
+            var url = "";
+            Type type = obj.GetType();
+            PropertyInfo[] properties = type.GetProperties();
 
-            OnWorkComplete_i++;
-            if ( numConThreads.Value <= OnWorkComplete_i ) {
-                Invoke( (MethodInvoker)delegate {
-                    Logging.WriteStatus( "Avg Time: " + (GI / CI) );
-                    btnStop.Text = "Stop";
-                } );
-            }
-            //StopThreads = false;
+            foreach (PropertyInfo property in properties)
+            {
+                var argument = "";
 
-        }
-
-        private double CallResource() {
-            var dt = DateTime.Now;
-
-            var request = (HttpWebRequest)WebRequest.Create( txtURL.Text );
-            request.Method = WebRequestMethods.Http.Get;
-            request.ContentType = "text/html";
-            request.Timeout = 1000 * 60 * 60;
-
-            using ( var response = (HttpWebResponse)request.GetResponse() ) {
-                using ( var dataStream = response.GetResponseStream() ) {
-                    using ( StreamReader reader = new StreamReader( dataStream ) ) {
-                        var s = reader.ReadToEnd().ToString();
-                        return (DateTime.Now - dt).TotalMilliseconds;
-                    }
+                var val = property.GetValue(obj, null);
+                if (val == null)
+                    continue;
+                foreach (object attr in property.GetCustomAttributes(true))
+                    if (attr as ArgumentAttribute != null)
+                        argument = (attr as ArgumentAttribute).Argument;
+                if (argument == "")
+                    continue;
+                if (argument == "-B")
+                {
+                    url = val.ToString();
+                    continue;
                 }
+                if (property.PropertyType == typeof(bool))
+                {
+                    if ((bool)val)
+                        sb.Append(argument + " ");
+                }
+                else if (property.PropertyType == typeof(int))
+                {
+                    if ((int)val > 0)
+                        sb.Append(argument + " " + val.ToString() + " ");
+                }
+                else if (property.PropertyType == typeof(Dictionary<string, string>))
+                    sb.Append("");
+                else if (property.PropertyType == typeof(List<string>))
+                    sb.Append("");
+                else
+                    sb.Append(argument + " " + val.ToString() + " ");
+
+
             }
+            sb.Append(url);
+            return sb.ToString();
         }
 
-        private void btnStop_Click( object sender, EventArgs e ) {
-            StopThreads = true;
-            btnStop.Text = "Stoping...";
-            foreach ( var t in _threads ) {
-                t.Abort();
-            }
-            //Invoke( (MethodInvoker)delegate {
-            //    Logging.WriteStatus( "Avg Time: " + (GI / (double)(numConThreads.Value + numConThreads.Value)) );
-            //} );
-        }
     }
 }
