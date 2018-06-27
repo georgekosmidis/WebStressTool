@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>This app uses Apache HTTP server benchmarking tool v2.3.1757674
+    <value>This app uses Apache HTTP server benchmarking tool v2.4.33.0
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
 Licensed to The Apache Software Foundation, http://www.apache.org/</value>
   </data>
