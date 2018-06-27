@@ -97,10 +97,10 @@
     <Content Include="x64\abs.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\libeay32.dll">
+    <Content Include="x64\libcrypto-1_1-x64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\ssleay32.dll">
+    <Content Include="x64\libssl-1_1-x64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="x86\abs.exe">
